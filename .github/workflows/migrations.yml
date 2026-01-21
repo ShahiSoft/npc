@@ -1,0 +1,104 @@
+name: Shared Migrations Smoke Test
+
+on:
+  push:
+    paths:
+      - 'packages/shared/**'
+  pull_request:
+    paths:
+      - 'packages/shared/**'
+
+jobs:
+  migrate-and-check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nusantara_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Enable corepack and setup pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Cache pnpm store and node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            node_modules
+          key: ${{ runner.os }}-pnpm-18-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-18-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -w -r run build --silent
+
+      - name: Run migrations and seed (capture logs)
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/nusantara_dev
+        run: |
+          mkdir -p ./.ci
+          echo "Running migrations..." | tee ./.ci/migration.log
+          pnpm --filter @nusantara/shared run migrate 2>&1 | tee -a ./.ci/migration.log
+          echo "Running seeds..." | tee -a ./.ci/migration.log
+          pnpm --filter @nusantara/shared run seed 2>&1 | tee -a ./.ci/migration.log || true
+
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      # OpenAPI codegen switched to Node-only `openapi-typescript`, Java not required.
+
+      - name: Schema smoke-check
+        env:
+          PGPASSWORD: postgres
+        run: |
+          echo "Checking required tables exist..." | tee -a ./.ci/migration.log
+          psql -h localhost -U postgres -d nusantara_dev -c "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('users','orders','subscriptions')" | tee -a ./.ci/migration.log
+          # Fail if any required table missing
+          missing=$(psql -h localhost -U postgres -d nusantara_dev -t -c "SELECT 'users' as t WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='users') UNION ALL SELECT 'orders' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='orders') UNION ALL SELECT 'subscriptions' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='subscriptions')")
+          if [ -n "${missing// /}" ]; then
+            echo "Missing tables: $missing" | tee -a ./.ci/migration.log
+            exit 1
+          fi
+
+      - name: Generate client artifact (simple generation)
+        run: node packages/shared/scripts/generate-client.js
+
+      - name: Upload migration logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-migration-log
+          path: ./.ci/migration.log
+
+      - name: Upload shared-dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-dist
+          path: packages/shared/dist
+
+      - name: Upload shared test-logs if present
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-test-logs
+          path: packages/shared/test-logs/**
+          if-no-files-found: ignore

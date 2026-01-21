@@ -1,0 +1,71 @@
+name: Shared Test Suite (Testcontainers)
+
+on:
+  push:
+    paths:
+      - 'packages/shared/**'
+  pull_request:
+    paths:
+      - 'packages/shared/**'
+
+jobs:
+  test-shared:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18, 20]
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Enable corepack and setup pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Cache pnpm store and node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            node_modules
+          key: ${{ runner.os }}-pnpm-${{ matrix.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-${{ matrix.node-version }}
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -w -r run build --silent
+
+      - name: Run shared tests (includes Testcontainers migration test)
+        env:
+          CI: true
+        run: |
+          cd packages/shared
+          # run the shared test runner which will attempt Testcontainers tests
+          # capture output to root for artifact upload
+          node dist/tests/run.js 2>&1 | tee ../../shared-tests.log
+
+      - name: Upload shared test log artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-test-log
+          path: shared-tests.log
+
+      - name: Upload shared build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-dist
+          path: packages/shared/dist

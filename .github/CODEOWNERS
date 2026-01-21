@@ -1,0 +1,13 @@
+
+# CODEOWNERS
+# All repository paths are owned by the `admin` account for now.
+# Replace `@admin` with organization teams or individuals when available.
+
+* @admin
+
+# Explicit high-risk path ownership (admin)
+/packages/shared/migrations/ @admin
+/packages/shared/src/auth/ @admin
+/.github/ @admin
+/packages/shared/ @admin
+/packages/services/ @admin

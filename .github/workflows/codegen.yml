@@ -1,0 +1,50 @@
+name: Codegen and Commit
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Run codegen
+        run: pnpm --filter @nusantara/shared run codegen
+
+      - name: Create pull request with generated client
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: chore(codegen): update generated client
+          title: chore(codegen): update generated client
+          body: |
+            This PR was opened automatically by the codegen workflow.
+            It contains updates to the generated client under `packages/shared/dist/client`.
+          branch: codegen/auto-update-${{ github.run_id }}
+          base: main
+          labels: codegen, automated
+          paths: |
+            packages/shared/dist/client/**
