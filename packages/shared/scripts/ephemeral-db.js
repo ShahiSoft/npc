@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-var-requires */
 const path = require('path');
 
 (async () => {
@@ -42,8 +43,8 @@ const path = require('path');
     console.error('Error during ephemeral DB run:', err);
     process.exitCode = 2;
   } finally {
-    try { await knex.destroy(); } catch (e) {}
-    try { await container.stop(); } catch (e) {}
+    try { await knex.destroy(); } catch (e) { /* ignore cleanup errors */ }
+    try { await container.stop(); } catch (e) { /* ignore container stop errors */ }
   }
 
   process.exit(process.exitCode || 0);

@@ -9,6 +9,7 @@ exports.seed = async function (knex) {
   await knex('subscriptions').del().catch(() => {});
   await knex('products').del().catch(() => {});
   await knex('users').del().catch(() => {});
+  /* eslint-disable @typescript-eslint/no-var-requires */
   // generate client-side UUIDs for ids
   const { randomUUID } = require('crypto');
   const userId = randomUUID();
