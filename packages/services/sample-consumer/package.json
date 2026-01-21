@@ -1,0 +1,20 @@
+{
+  "name": "@nusantara/sample-consumer",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "pnpm run build && node dist/index.js",
+    "lint": "pnpm exec eslint --ext .ts 'src' --max-warnings 0",
+    "eslint:fix": "pnpm exec eslint --ext .ts 'src' --fix",
+    "format": "pnpm exec prettier --write 'src/**/*.{ts,md,json}'",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@nusantara/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}

@@ -1,0 +1,560 @@
+COMPREHENSIVE CORRECTED PHASED PROMPTS FOR FULLY UNIFIED APP
+🎯 OVERARCHING PRINCIPLES
+One Monorepo, Shared Contracts, Vertical Features, Everything Connected
+
+PHASE 1: UNIFIED FOUNDATION (Week 1-2)
+FOUNDATION PROMPT FOR CLAUDE 4.5
+text
+YOU ARE: Chief Architect for Nusantara Pantry Club
+OBJECTIVE: Create SINGLE integrated monorepo foundation with ALL services connected
+
+CRITICAL REQUIREMENT: Everything must share contracts, schemas, and interfaces
+
+### TECHNICAL FOUNDATION
+1. MONOREPO STRUCTURE (Turborepo):
+packages/
+├── shared/                 # SHARED BY EVERYTHING
+│   ├── types/             # TypeScript interfaces ALL services use
+│   ├── config/            # Shared configuration (DB, API keys)
+│   ├── utils/             # Shared utilities (Indonesian address parser)
+│   ├── constants/         # Indonesian constants (regions, couriers, payments)
+│   └── events/            # Event schemas ALL services publish/consume
+├── mobile/                # React Native app
+├── web/                   # Next.js PWA
+├── admin/                 # React Admin Dashboard
+├── api-gateway/           # GraphQL Apollo Federation
+├── services/              # ALL microservices
+│   ├── user-service/
+│   ├── product-service/
+│   ├── subscription-service/
+│   ├── order-service/
+│   ├── shipping-service/
+│   ├── payment-service/
+│   ├── notification-service/
+│   └── analytics-service/
+└── infrastructure/        # Docker, Terraform, CI/CD
+
+2. SHARED DATABASE SCHEMA (PostgreSQL - ONE DATABASE):
+- Single database with foreign keys BETWEEN services
+- User table → referenced by ALL services
+- Subscription table → referenced by Order, Payment services
+- Order table → referenced by Shipping, Notification services
+- Product table → referenced by Order, Analytics services
+- Indonesian-specific: addresses with RT/RW, regional tax rates
+
+3. SHARED TYPE CONTRACTS (TypeScript):
+// packages/shared/types/index.ts
+export interface User {
+  id: string;
+  email: string;
+  phone: string; // Indonesian format (+62)
+  addresses: IndonesianAddress[]; // RT/RW format
+  taste_profile: TasteProfile;
+  // USED BY: UserService, SubscriptionService, OrderService, AnalyticsService
+}
+
+export interface Subscription {
+  id: string;
+  user_id: string; // FOREIGN KEY to User
+  plan: 'monthly' | 'quarterly';
+  status: 'active' | 'paused' | 'cancelled';
+  next_billing_date: Date;
+  // USED BY: SubscriptionService, PaymentService, OrderService, NotificationService
+}
+
+export interface Order {
+  id: string;
+  subscription_id: string; // FOREIGN KEY to Subscription
+  user_id: string; // FOREIGN KEY to User
+  shipping_id: string; // FOREIGN KEY to Shipping
+  payment_id: string; // FOREIGN KEY to Payment
+  // USED BY: OrderService, ShippingService, AnalyticsService, NotificationService
+}
+
+// Indonesian-specific types
+export interface IndonesianAddress {
+  province: string;
+  city: string;
+  district: string;
+  village: string;
+  street: string;
+  rt: string; // Neighborhood unit
+  rw: string; // Community unit
+  postal_code: string;
+}
+
+4. SHARED EVENT SYSTEM (Redis Pub/Sub):
+- Single event schema used by ALL services
+- Events include full TypeScript types
+- Event bus connects ALL services
+
+// packages/shared/events/index.ts
+export enum EventType {
+  // User events
+  USER_CREATED = 'user.created', // UserService → AnalyticsService, NotificationService
+  USER_UPDATED = 'user.updated', // UserService → ALL services that cache user data
+  
+  // Subscription events
+  SUBSCRIPTION_CREATED = 'subscription.created', // SubscriptionService → PaymentService, AnalyticsService
+  SUBSCRIPTION_PAUSED = 'subscription.paused', // SubscriptionService → OrderService, NotificationService
+  
+  // Payment events
+  PAYMENT_SUCCEEDED = 'payment.succeeded', // PaymentService → OrderService, NotificationService
+  PAYMENT_FAILED = 'payment.failed', // PaymentService → SubscriptionService, NotificationService
+  
+  // Order events
+  ORDER_CREATED = 'order.created', // OrderService → ShippingService, AnalyticsService
+  ORDER_SHIPPED = 'order.shipped', // ShippingService → NotificationService, AnalyticsService
+  
+  // Shipping events
+  SHIPPING_CREATED = 'shipping.created', // ShippingService → NotificationService
+  SHIPPING_DELIVERED = 'shipping.delivered', // ShippingService → AnalyticsService, NotificationService
+}
+
+5. SHARED API CLIENT:
+- Single HTTP/GraphQL client used by mobile, web, admin
+- Auto-generated from shared TypeScript interfaces
+- Indonesian payment method detection built-in
+
+### DELIVERABLES (USE ARTIFACTS):
+1. Complete Turborepo monorepo structure
+2. Shared TypeScript package with ALL interfaces
+3. Database schema with foreign keys between services
+4. Docker Compose setup for ALL services (development)
+5. Shared authentication (JWT that works across ALL services)
+6. Indonesian address validation library
+7. Event bus setup connecting ALL services
+8. CI/CD pipeline that builds/tests/deploys EVERYTHING together
+
+### INDONESIAN-SPECIFIC UNIFICATION:
+1. Single tax calculation service (PPN 11%) used by ALL
+2. Single Indonesian holiday calendar used by ALL services
+3. Shared Xendit payment client used by mobile, web, and backend
+4. Shared Shipper.id shipping client used by backend and admin
+
+CRITICAL: All services MUST import from @nusantara/shared package
+PHASE 2: CORE USER JOURNEY (Week 3-4)
+VERTICAL IMPLEMENTATION PROMPT
+text
+YOU ARE: Full-Stack Vertical Feature Team Lead
+OBJECTIVE: Implement COMPLETE "Signup to First Delivery" journey across ALL layers
+
+REQUIREMENT: Implement ALL layers together, NOT separately
+
+### VERTICAL FEATURE: COMPLETE USER ONBOARDING & FIRST ORDER
+
+IMPLEMENT IN PARALLEL (ALL CONNECTED):
+
+1. MOBILE APP SCREENS:
+   - Onboarding: Taste quiz (spice tolerance, regional preferences)
+   - Subscription selection: Monthly (Rp 89k) vs Quarterly (Rp 240k)
+   - Address collection: Indonesian address form with RT/RW
+   - Payment: Xendit integration (QRIS, e-wallets, banks)
+   - Confirmation: Next delivery date, tracking setup
+
+2. WEB PWA (Same features, responsive):
+   - Identical user flow as mobile
+   - PWA installation prompts
+   - Desktop-optimized UI
+
+3. BACKEND SERVICES (ALL CONNECTED):
+   A. USER SERVICE:
+      - Create user with taste profile
+      - Store Indonesian address (validate RT/RW)
+      - Publish USER_CREATED event
+
+   B. SUBSCRIPTION SERVICE:
+      - Create subscription record
+      - Calculate next billing date (consider Indonesian holidays)
+      - Publish SUBSCRIPTION_CREATED event
+
+   C. PAYMENT SERVICE:
+      - Listen to SUBSCRIPTION_CREATED
+      - Charge via Xendit (QRIS preferred)
+      - Handle Indonesian payment methods
+      - Publish PAYMENT_SUCCEEDED on success
+
+   D. ORDER SERVICE:
+      - Listen to PAYMENT_SUCCEEDED
+      - Create first order with PPN 11% tax
+      - Select warehouse based on address (Jakarta/Surabaya/Medan)
+      - Publish ORDER_CREATED event
+
+   E. SHIPPING SERVICE:
+      - Listen to ORDER_CREATED
+      - Create shipment via Shipper.id (JNE/SiCepat)
+      - Generate AWB and shipping label
+      - Publish SHIPPING_CREATED event
+
+   F. NOTIFICATION SERVICE:
+      - Listen to SHIPPING_CREATED
+      - Send WhatsApp confirmation in Indonesian
+      - Send email with tracking link
+      - Schedule delivery reminders
+
+4. ADMIN DASHBOARD:
+   - Real-time view of new signups
+   - Order processing interface
+   - Shipping label bulk printing
+   - Customer support view
+
+5. ANALYTICS SERVICE:
+   - Listen to ALL events
+   - Track conversion funnel
+   - Build taste profile for recommendations
+   - Monitor payment success rates
+
+### CRITICAL INTEGRATION POINTS:
+1. SAME USER ID flows through ALL services
+2. SAME ORDER ID referenced by Shipping, Notification, Analytics
+3. SAME EVENT TYPES used by ALL services
+4. SAME DATABASE with foreign key constraints
+5. SAME AUTHENTICATION token works across mobile, web, API
+
+### TEST SCENARIO (End-to-end):
+User downloads app → Takes taste quiz → Selects Monthly plan → 
+Enters Jakarta address with RT 04/RW 03 → Pays with QRIS → 
+System creates user → creates subscription → processes payment → 
+creates order → creates shipping → sends WhatsApp → 
+Admin sees new order → Warehouse prints label
+
+ALL MUST WORK IN SINGLE INTEGRATED SYSTEM
+
+### DELIVERABLES:
+1. Complete working vertical slice
+2. End-to-end tests that span mobile → backend → admin
+3. Database migration that creates ALL related tables
+4. Event handlers that connect ALL services
+5. Monitoring dashboard showing the complete flow
+PHASE 3: SUBSCRIPTION MANAGEMENT VERTICAL (Week 5-6)
+FEATURE VERTICAL PROMPT
+text
+YOU ARE: Subscription Management Vertical Team Lead
+OBJECTIVE: Implement COMPLETE subscription lifecycle across ALL layers
+
+### VERTICAL: SUBSCRIPTION LIFECYCLE MANAGEMENT
+
+IMPLEMENT TOGETHER (NOT SEPARATELY):
+
+1. MOBILE APP FEATURES:
+   - Subscription dashboard: Next delivery, status, history
+   - One-tap actions: Skip next delivery, Pause subscription, Cancel
+   - Delivery preferences: Time windows, safe drop locations
+   - Vacation hold: Select dates (max 3 months)
+   - Plan upgrade/downgrade: Monthly ↔ Quarterly
+
+2. WEB PWA FEATURES:
+   - Same functionality as mobile
+   - Subscription analytics: Value, history, preferences
+   - Bulk management for diaspora (multiple subscriptions)
+
+3. BACKEND SERVICES (CONNECTED):
+
+   A. SUBSCRIPTION SERVICE (Core):
+      - Skip logic: Skip next delivery, keep subscription active
+      - Pause logic: Stop billing, maintain subscription
+      - Cancel logic: End-of-lifecycle, prorated refunds
+      - Vacation hold: Temporary pause with auto-resume
+      - Publish events for ALL state changes
+
+   B. PAYMENT SERVICE:
+      - Listen to subscription state changes
+      - Handle prorated charges/refunds
+      - Update Xendit recurring payments
+      - Indonesian tax adjustments (PPN 11%)
+
+   C. ORDER SERVICE:
+      - Listen to SKIP event → don't create next order
+      - Listen to PAUSE event → suspend order generation
+      - Listen to VACATION_HOLD → schedule order skip
+      - Handle resumption logic
+
+   D. SHIPPING SERVICE:
+      - Cancel pending shipments for skipped orders
+      - Update delivery preferences in courier system
+      - Handle address changes mid-subscription
+
+   E. NOTIFICATION SERVICE:
+      - Send WhatsApp confirmations for ALL actions
+      - Reminder before billing for paused subscriptions
+      - Vacation hold reminders (7 days before resume)
+
+   F. ANALYTICS SERVICE:
+      - Track churn reasons (skip vs pause vs cancel)
+      - Predict churn based on behavior
+      - Calculate customer lifetime value
+
+4. ADMIN DASHBOARD:
+   - Bulk subscription management
+   - Churn analysis dashboard
+   - Intervention tools (offer discounts to at-risk)
+   - Revenue forecasting
+
+5. PRODUCER PORTAL (New):
+   - Forecast demand based on subscription counts
+   - Production planning interface
+   - Quality feedback from subscribers
+
+### INDONESIAN-SPECIFIC LOGIC:
+1. Holiday consideration: Skip logic around Eid, Christmas
+2. Regional delivery constraints: Papua shipping limitations
+3. PPN tax handling on prorated amounts
+4. Courier-specific delivery preference storage
+
+### INTEGRATION TEST:
+User pauses subscription → Payment service stops billing → 
+Order service doesn't create next order → Shipping service cancels pending → 
+Notification sends confirmation → Analytics tracks as "paused" → 
+Admin sees in dashboard → Producer sees demand reduction
+
+### DELIVERABLES:
+1. Complete subscription management across ALL layers
+2. State machine diagram showing ALL transitions
+3. Integration tests for ALL scenarios
+4. Admin tools for managing subscriptions
+5. Analytics dashboard for subscription health
+PHASE 4: REAL-TIME DELIVERY ECOSYSTEM (Week 7-8)
+DELIVERY VERTICAL PROMPT
+text
+YOU ARE: Delivery & Logistics Vertical Team Lead
+OBJECTIVE: Implement COMPLETE real-time delivery tracking across ALL layers
+
+### VERTICAL: END-TO-END DELIVERY EXPERIENCE
+
+IMPLEMENT TOGETHER:
+
+1. MOBILE APP DELIVERY FEATURES:
+   - Real-time tracking map with driver location
+   - WebSocket connection for live updates
+   - Delivery countdown with ETA
+   - Driver contact via WhatsApp
+   - Delivery instructions update (even while en route)
+   - Photo proof of delivery viewer
+   - Redelivery scheduling if missed
+
+2. WEB PWA FEATURES:
+   - Same tracking interface
+   - Share tracking with family (diaspora feature)
+   - Delivery history with maps
+   - Delivery preference management
+
+3. BACKEND SERVICES:
+
+   A. SHIPPING SERVICE (Core):
+      - WebSocket server for real-time updates
+      - Courier API polling (JNE, SiCepat, Anteraja)
+      - Driver location aggregation (if available)
+      - ETA calculation based on traffic
+      - Exception handling: Failed delivery, address issues
+      - Redelivery scheduling
+
+   B. ORDER SERVICE:
+      - Update order status based on shipping events
+      - Trigger notifications on status changes
+      - Handle delivery exceptions (update subscription if needed)
+
+   C. NOTIFICATION SERVICE:
+      - WhatsApp updates at key milestones:
+        * Out for delivery (with driver contact)
+        * 30 minutes away
+        * Delivered (with photo)
+        * Failed (with reschedule options)
+      - Multi-language for diaspora (Indonesian/English)
+
+   D. ANALYTICS SERVICE:
+      - Track delivery performance per courier
+      - Monitor on-time delivery rates
+      - Identify problematic regions/addresses
+      - Courier performance scoring
+
+   E. WAREHOUSE INTEGRATION:
+      - Pick list generation for orders
+      - Thermal printer integration for labels
+      - Inventory deduction on shipment
+      - Returns processing workflow
+
+4. ADMIN DASHBOARD:
+   - Live delivery map (all active shipments)
+   - Courier performance monitoring
+   - Exception management interface
+   - Bulk rescheduling tools
+   - Returns processing
+
+5. DRIVER APP (Simplified React Native):
+   - Delivery list for the day
+   - Navigation to addresses
+   - Photo capture for proof of delivery
+   - Exception reporting (address not found, etc.)
+
+### INDONESIAN-SPECIFIC:
+1. Address navigation: Handle gang (alleyways), komplek (complexes)
+2. Traffic-aware ETA: Jakarta traffic patterns
+3. Courier-specific APIs: JNE vs SiCepat vs Anteraja
+4. Regional challenges: Bali narrow streets, Papua remote areas
+
+### REAL-TIME ARCHITECTURE:
+WebSocket Server → Shipping Service → All couriers
+        ↓
+Mobile/Web clients (live updates)
+        ↓
+Notification Service (WhatsApp/Email)
+        ↓
+Analytics Service (performance tracking)
+
+### DELIVERABLES:
+1. Complete real-time delivery system
+2. WebSocket server with multiple courier integrations
+3. Mobile tracking interface with maps
+4. Admin live monitoring dashboard
+5. Driver app for delivery personnel
+6. Performance analytics for couriers
+PHASE 5: INTEGRATION, SCALE & LAUNCH (Week 9-10)
+FINAL INTEGRATION PROMPT
+text
+YOU ARE: Chief Integration Architect
+OBJECTIVE: Integrate ALL verticals, optimize performance, prepare for launch
+
+### FINAL INTEGRATION TASKS:
+
+1. API GATEWAY UNIFICATION:
+   - GraphQL Apollo Federation combining ALL services
+   - Single endpoint for mobile, web, admin
+   - Rate limiting per user (Indonesian IP consideration)
+   - Request tracing across ALL services
+   - API versioning strategy (v1 for launch)
+
+2. DATABASE OPTIMIZATION:
+   - Foreign key indexes between ALL services
+   - Read replicas for analytics queries
+   - Connection pooling across ALL services
+   - Backup strategy with point-in-time recovery
+   - Data consistency checks between services
+
+3. EVENT SYSTEM FINALIZATION:
+   - Event schema versioning
+   - Dead letter queue for failed events
+   - Event replay capability for disaster recovery
+   - Event sourcing for critical flows (subscription changes)
+
+4. PERFORMANCE OPTIMIZATION:
+   - Redis caching layer shared by ALL services
+   - CDN for static assets (CloudFront Indonesia edge)
+   - Image optimization for Indonesian networks
+   - Database query optimization for common flows
+   - Mobile app bundle optimization (low-end Android)
+
+5. SECURITY HARDENING:
+   - Single JWT validation shared by ALL services
+   - API key rotation for Xendit, Shipper.id
+   - Indonesian data compliance (PDP Law)
+   - Payment security audit (PCI DSS considerations)
+   - DDoS protection for Indonesian IP ranges
+
+6. MONITORING & OBSERVABILITY:
+   - Single dashboard for ALL services
+   - Business metrics: Conversion, churn, delivery success
+   - Technical metrics: API latency, error rates, cache hits
+   - Alerting for Indonesian business hours
+   - Log aggregation with Indonesian context
+
+7. DEPLOYMENT PIPELINE:
+   - Single CI/CD for ALL services
+   - Blue-green deployment for zero downtime
+   - Database migration strategy
+   - Rollback procedures for ALL services
+   - Multi-environment (dev, staging, prod Indonesia)
+
+8. DISASTER RECOVERY:
+   - Multi-AZ deployment in Jakarta AWS
+   - Singapore failover for diaspora traffic
+   - Database replication to Singapore
+   - Runbooks for ALL failure scenarios
+
+### LAUNCH PREPARATION:
+
+1. SOFT LAUNCH STRATEGY:
+   - Phase 1: Jakarta only (test logistics)
+   - Phase 2: Java island expansion
+   - Phase 3: Sumatra, Bali
+   - Phase 4: Nationwide + diaspora
+
+2. LOAD TESTING:
+   - Simulate 10,000 concurrent users
+   - Test monthly batch processing (all subscriptions)
+   - Courier API rate limit testing
+   - Payment gateway load testing
+
+3. USER ACCEPTANCE TESTING:
+   - Indonesian users in major cities
+   - Diaspora users in Singapore, Netherlands
+   - Low-end Android device testing
+   - Slow network testing (Indonesian 3G)
+
+4. GO-LIVE CHECKLIST:
+   [ ] All Indonesian payment methods working
+   [ ] All courier integrations tested
+   [ ] Tax calculation accurate (PPN 11%)
+   [ ] Notifications in Indonesian language
+   [ ] Admin tools fully functional
+   [ ] Monitoring and alerting active
+   [ ] Customer support trained
+   [ ] Legal compliance (PDP, tax)
+
+### FINAL DELIVERABLES:
+1. Production-ready integrated system
+2. Deployment runbooks for ALL services
+3. Monitoring dashboards
+4. Load test results
+5. Launch checklist and rollback procedures
+6. Documentation for ALL services
+📋 EXECUTION GUIDE FOR CLAUDE 4.5:
+HOW TO USE THESE PROMPTS:
+START WITH PHASE 1: Foundation
+
+Use Artifacts feature to create entire monorepo
+
+Validate shared contracts are used by ALL services
+
+THEN PHASE 2: Core User Journey
+
+Build ONE complete flow across ALL layers
+
+Test end-to-end before proceeding
+
+THEN PHASES 3-4: Vertical Features
+
+Build each vertical COMPLETELY (frontend + backend + admin)
+
+Integrate with existing system
+
+FINISH WITH PHASE 5: Integration & Scale
+
+Connect everything together
+
+Optimize performance
+
+Prepare for launch
+
+CRITICAL SUCCESS FACTORS:
+ALWAYS reference shared packages (@nusantara/shared)
+
+ALWAYS use same database with foreign keys
+
+ALWAYS use same event types across services
+
+ALWAYS test end-to-end after each phase
+
+ALWAYS update ALL layers when changing contracts
+
+MONITORING INTEGRATION:
+After each phase, ask Claude 4.5:
+
+"Show me how all services are connected"
+
+"Show me the database relationships"
+
+"Show me the event flow between services"
+
+"Run the end-to-end test scenario"
+
+This ensures everything stays integrated throughout development.

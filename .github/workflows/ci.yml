@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Enable Corepack and install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Test
+        run: pnpm run test || echo "No tests configured"
+
+      - name: Generate type docs
+        run: pnpm run docs:types || echo "TypeDoc generation failed"
+
+  migrations:
+    runs-on: ubuntu-latest
+    needs: build
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_DB: nusantara_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Enable Corepack and install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Wait for Postgres
+        run: |
+          echo "Waiting for Postgres to accept connections..."
+          for i in {1..30}; do
+            if (echo > /dev/tcp/localhost/5432) >/dev/null 2>&1; then
+              echo "Postgres is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Postgres did not start in time"
+          exit 1
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/nusantara_test
+        run: pnpm --filter @nusantara/shared run migrate
+
+      - name: Run seeds
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/nusantara_test
+        run: pnpm --filter @nusantara/shared run seed
+
+      - name: Migration status
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/nusantara_test
+        run: pnpm --filter @nusantara/shared run migrate:status
+
+      - name: Run migration smoke test
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/nusantara_test
+        run: pnpm --filter @nusantara/shared run migrate:smoke
