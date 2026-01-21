@@ -1,0 +1,87 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Nusantara Shared API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/users/{id}": {
+      "get": {
+        "summary": "Get user by id",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } } }
+      },
+      "post": {
+        "summary": "Create user",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } } }
+      }
+    },
+    "/products": {
+      "get": {
+        "summary": "List products",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Product" } } } } } }
+      }
+    },
+    "/orders": {
+      "post": {
+        "summary": "Create order",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Order" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Order" } } } } }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "IndonesianAddress": {
+        "type": "object",
+        "properties": {
+          "province": { "type": "string" },
+          "city": { "type": "string" },
+          "district": { "type": "string" },
+          "village": { "type": "string" },
+          "street": { "type": "string" },
+          "rt": { "type": "string" },
+          "rw": { "type": "string" },
+          "postal_code": { "type": "string" }
+        }
+      },
+      "User": { "$ref": "#/components/schemas/SharedUser" },
+      "Product": { "$ref": "#/components/schemas/SharedProduct" },
+      "Order": { "$ref": "#/components/schemas/SharedOrder" },
+      "SharedUser": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "addresses": { "type": "array", "items": { "$ref": "#/components/schemas/IndonesianAddress" } },
+          "taste_profile": { "type": "object" }
+        },
+        "required": ["id","email"]
+      },
+      "SharedProduct": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "price": { "type": "integer" },
+          "tax_exempt": { "type": "boolean" }
+        },
+        "required": ["id","name","price"]
+      },
+      "SharedOrder": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "subscription_id": { "type": "string" },
+          "user_id": { "type": "string" },
+          "amount": { "type": "integer" }
+        },
+        "required": ["id","user_id"]
+      }
+    }
+  }
+}

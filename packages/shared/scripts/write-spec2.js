@@ -1,0 +1,63 @@
+const fs = require('fs');
+const spec = {
+  openapi: '3.0.0',
+  info: {
+    title: 'Nusantara Shared API',
+    version: '0.2.0',
+    description: 'Authoritative shared API surface for users, subscriptions, orders, payments, shipments and authentication used across services.'
+  },
+  servers: [{ url: 'https://api.nusantara.local' }],
+  paths: {
+    '/auth/token': {
+      post: {
+        summary: 'Issue JWT token',
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/AuthRequest' } } } },
+        responses: { '200': { description: 'Token issued', content: { 'application/json': { schema: { $ref: '#/components/schemas/TokenResponse' } } } } }
+      }
+    },
+    '/users': {
+      post: {
+        summary: 'Create user',
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/UserCreate' } } } },
+        responses: { '201': { description: 'Created', content: { 'application/json': { schema: { $ref: '#/components/schemas/User' } } } } }
+      },
+      get: { summary: 'List users', responses: { '200': { description: 'List', content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/User' } } } } } } }
+    },
+    '/users/{userId}': {
+      parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
+      get: { summary: 'Get user', responses: { '200': { description: 'OK', content: { 'application/json': { schema: { $ref: '#/components/schemas/User' } } } } } }
+    },
+    '/subscriptions': {
+      post: { summary: 'Create subscription', requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/SubscriptionCreate' } } } }, responses: { '201': { description: 'Created', content: { 'application/json': { schema: { $ref: '#/components/schemas/Subscription' } } } } } }
+    },
+    '/orders': {
+      post: { summary: 'Create order', requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/OrderCreate' } } } }, responses: { '201': { description: 'Created', content: { 'application/json': { schema: { $ref: '#/components/schemas/Order' } } } } } }
+    },
+    '/payments': {
+      post: { summary: 'Create payment (charge)', requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/PaymentRequest' } } } }, responses: { '200': { description: 'Payment processed', content: { 'application/json': { schema: { $ref: '#/components/schemas/PaymentResult' } } } } } }
+    },
+    '/shipments': {
+      post: { summary: 'Create shipment', requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/ShipmentRequest' } } } }, responses: { '201': { description: 'Shipment created', content: { 'application/json': { schema: { $ref: '#/components/schemas/ShipmentResult' } } } } } }
+    }
+  },
+  components: {
+    schemas: {
+      AuthRequest: { type: 'object', properties: { client_id: { type: 'string' }, client_secret: { type: 'string' } }, required: ['client_id', 'client_secret'] },
+      TokenResponse: { type: 'object', properties: { access_token: { type: 'string' }, token_type: { type: 'string' }, expires_in: { type: 'integer' } }, required: ['access_token'] },
+      IndonesianAddress: { type: 'object', properties: { province: { type: 'string' }, city: { type: 'string' }, district: { type: 'string' }, village: { type: 'string' }, street: { type: 'string' }, rt: { type: 'string' }, rw: { type: 'string' }, postal_code: { type: 'string' } }, required: ['province','city','district','village','street','rt','rw','postal_code'] },
+      UserCreate: { type: 'object', properties: { email: { type: 'string', format: 'email' }, phone: { type: 'string' }, addresses: { type: 'array', items: { $ref: '#/components/schemas/IndonesianAddress' } } }, required: ['email'] },
+      User: { allOf: [{ $ref: '#/components/schemas/UserCreate' }, { type: 'object', properties: { id: { type: 'string', format: 'uuid' } } }] },
+      SubscriptionCreate: { type: 'object', properties: { user_id: { type: 'string' }, plan: { type: 'string', enum: ['monthly','quarterly'] } }, required: ['user_id','plan'] },
+      Subscription: { allOf: [{ $ref: '#/components/schemas/SubscriptionCreate' }, { type: 'object', properties: { id: { type: 'string' }, status: { type: 'string' }, next_billing_date: { type: 'string', format: 'date' } } }] },
+      OrderItem: { type: 'object', properties: { product_id: { type: 'string' }, quantity: { type: 'integer' }, price: { type: 'number' } }, required: ['product_id','quantity','price'] },
+      OrderCreate: { type: 'object', properties: { subscription_id: { type: 'string' }, user_id: { type: 'string' }, items: { type: 'array', items: { $ref: '#/components/schemas/OrderItem' } } }, required: ['user_id','items'] },
+      Order: { allOf: [{ $ref: '#/components/schemas/OrderCreate' }, { type: 'object', properties: { id: { type: 'string' }, subtotal: { type: 'number' }, tax: { type: 'number' }, total: { type: 'number' } } }] },
+      PaymentRequest: { type: 'object', properties: { order_id: { type: 'string' }, method: { type: 'string' }, amount: { type: 'number' } }, required: ['order_id','amount'] },
+      PaymentResult: { type: 'object', properties: { payment_id: { type: 'string' }, status: { type: 'string' } } },
+      ShipmentRequest: { type: 'object', properties: { order_id: { type: 'string' }, courier: { type: 'string' }, address: { $ref: '#/components/schemas/IndonesianAddress' } }, required: ['order_id','address'] },
+      ShipmentResult: { type: 'object', properties: { shipment_id: { type: 'string' }, awb: { type: 'string' }, courier: { type: 'string' } } }
+    }
+  }
+};
+fs.writeFileSync('openapi/spec2.json', JSON.stringify(spec, null, 2) + '\n');
+console.log('wrote openapi/spec2.json');

@@ -3,7 +3,9 @@ import {
   nextBusinessDay,
   chargeSandbox,
   createShipmentMock,
+  generateUUID,
 } from '@nusantara/shared';
+import { ApiClient } from '@nusantara/generated-client';
 import type { User, Subscription, Order, IndonesianAddress } from '@nusantara/shared';
 
 async function main() {
@@ -30,7 +32,7 @@ async function main() {
   };
 
   const exampleUser: User = {
-    id: 'user-123',
+    id: generateUUID(),
     email: 'user@example.com',
     phone: '+6281234567890',
     addresses: [exampleAddress],
@@ -38,7 +40,7 @@ async function main() {
   };
 
   const exampleSubscription: Subscription = {
-    id: 'sub-123',
+    id: generateUUID(),
     user_id: exampleUser.id,
     plan: 'monthly',
     status: 'active',
@@ -46,12 +48,23 @@ async function main() {
   };
 
   const exampleOrder: Order = {
-    id: 'order-123',
+    id: generateUUID(),
     subscription_id: exampleSubscription.id,
     user_id: exampleUser.id,
   };
 
   console.log('Example user/types constructed (compile-time check):', exampleUser.id, exampleSubscription.id, exampleOrder.id);
+
+  // Example usage of generated client (will talk to local mock server if available)
+  const api = new ApiClient('http://localhost:3000');
+  try {
+    const created = await api.createUser(exampleUser);
+    console.log('Created user via generated client:', created.id);
+  } catch (e) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const err: any = e;
+    console.log('Generated client request failed (expected if no mock server):', err?.message ?? String(err));
+  }
 }
 
 if (require.main === module) main().catch((e) => {

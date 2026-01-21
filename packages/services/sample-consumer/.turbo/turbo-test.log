@@ -1,0 +1,17 @@
+ WARN  The field "pnpm.peerDependencyRules" was found in D:\NPC\packages\services\sample-consumer/package.json. This will not take effect. You should configure "pnpm.peerDependencyRules" at the root of the workspace instead.
+
+> @nusantara/sample-consumer@0.1.0 test D:\NPC\packages\services\sample-consumer
+> pnpm run build && node dist/index.js
+
+ WARN  The field "pnpm.peerDependencyRules" was found in D:\NPC\packages\services\sample-consumer/package.json. This will not take effect. You should configure "pnpm.peerDependencyRules" at the root of the workspace instead.
+
+> @nusantara/sample-consumer@0.1.0 build D:\NPC\packages\services\sample-consumer
+> tsc -p tsconfig.json
+
+Sample consumer running...
+Taxed sample: { amount: 100000, tax: 11000, total: 111000 }
+Next business day for 2026-12-25: 2026-12-28T00:00:00.000Z
+Payment result: { id: 'xendit_mock_1769005913850', status: 'PAID', amount: 100000 }
+Shipment result: { awb: 'AWB_1769005913881', courier: 'JNE', status: 'CREATED' }
+Example user/types constructed (compile-time check): e01f39ee-8212-4ecd-b3fc-214cabea6a2a 620608e3-368b-400a-85b8-83cad423e011 04dbbaee-9c53-4bfb-8437-e4a388a540e9
+Generated client request failed (expected if no mock server): fetch failed
