@@ -1,0 +1,21 @@
+name: Integration
+
+on:
+  push:
+    branches: [ feature/db-migrations ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: pnpm/action-setup@v2
+        with:
+          node-version: 18
+      - name: Install pnpm
+        run: pnpm install --frozen-lockfile
+      - name: Run ephemeral DB integration (Testcontainers)
+        run: pnpm --filter @nusantara/shared run test:ephemeral-db
