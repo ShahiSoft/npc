@@ -9,10 +9,16 @@ exports.up = async function (knex) {
   } catch (err) {
     // ignore - some hosted DBs may not allow extension creation; in that case UUIDs may be generated client-side
   }
+  // Also try uuid-ossp for environments that prefer uuid_generate_v4()
+  try {
+    await knex.raw('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+  } catch (err) {
+    // ignore - if extensions are unavailable, migrations still create tables; callers can generate UUIDs client-side
+  }
 
   // Users
   await knex.schema.createTable('users', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.uuid('id').primary();
     table.string('email').notNullable().unique();
     table.string('phone');
     // store addresses as JSONB (flexible Indonesian address structure)
@@ -23,7 +29,7 @@ exports.up = async function (knex) {
 
   // Products
   await knex.schema.createTable('products', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.uuid('id').primary();
     table.string('name').notNullable();
     table.bigInteger('price').notNullable().defaultTo(0); // price in smallest currency unit (IDR)
     table.boolean('tax_exempt').notNullable().defaultTo(false);
@@ -32,7 +38,7 @@ exports.up = async function (knex) {
 
   // Subscriptions
   await knex.schema.createTable('subscriptions', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.uuid('id').primary();
     table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.string('plan').notNullable();
     table.string('status').notNullable().defaultTo('active');
@@ -40,22 +46,10 @@ exports.up = async function (knex) {
     table.timestamps(true, true);
   });
 
-  // Orders
-  await knex.schema.createTable('orders', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-    table.uuid('subscription_id').references('id').inTable('subscriptions').onDelete('SET NULL');
-    table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
-    table.uuid('payment_id').references('id').inTable('payments').onDelete('SET NULL');
-    table.uuid('shipment_id').references('id').inTable('shipments').onDelete('SET NULL');
-    table.bigInteger('amount').notNullable().defaultTo(0);
-    table.string('status').notNullable().defaultTo('created');
-    table.timestamps(true, true);
-  });
-
   // Payments
   await knex.schema.createTable('payments', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-    table.uuid('order_id').references('id').inTable('orders').onDelete('SET NULL');
+    table.uuid('id').primary();
+    table.uuid('order_id');
     table.bigInteger('amount').notNullable().defaultTo(0);
     table.string('status').notNullable().defaultTo('pending');
     table.string('provider');
@@ -65,12 +59,24 @@ exports.up = async function (knex) {
 
   // Shipments
   await knex.schema.createTable('shipments', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-    table.uuid('order_id').references('id').inTable('orders').onDelete('CASCADE');
+    table.uuid('id').primary();
+    table.uuid('order_id');
     table.string('courier');
     table.string('awb');
     table.string('status').notNullable().defaultTo('created');
     table.jsonb('raw_response').defaultTo('{}');
+    table.timestamps(true, true);
+  });
+
+  // Orders
+  await knex.schema.createTable('orders', (table) => {
+    table.uuid('id').primary();
+    table.uuid('subscription_id').references('id').inTable('subscriptions').onDelete('SET NULL');
+    table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
+    table.uuid('payment_id').references('id').inTable('payments').onDelete('SET NULL');
+    table.uuid('shipment_id').references('id').inTable('shipments').onDelete('SET NULL');
+    table.bigInteger('amount').notNullable().defaultTo(0);
+    table.string('status').notNullable().defaultTo('created');
     table.timestamps(true, true);
   });
 };

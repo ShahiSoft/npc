@@ -17,6 +17,11 @@
     "bootstrap": "corepack enable && corepack prepare pnpm@latest --activate && pnpm install",
     "ci:local": "pnpm install && pnpm run build",
     "prepare": "husky install"
+    ,
+    "infra:up": "docker compose -f docker-compose.dev.yml up -d",
+    "infra:down": "docker compose -f docker-compose.dev.yml down -v",
+    "infra:logs": "docker compose -f docker-compose.dev.yml logs --follow",
+    "migrate:local": "cross-env $(cat .env.development | xargs) pnpm --filter @nusantara/shared run migrate && pnpm --filter @nusantara/shared run seed && pnpm --filter @nusantara/shared run migrate:smoke"
   },
   "devDependencies": {
     "turbo": "^1.8.3",

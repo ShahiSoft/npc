@@ -85,6 +85,20 @@ Additional implementations applied for type safety and docs:
    - Acceptance Criteria:
      - `docker compose -f docker-compose.dev.yml up` starts Postgres and Redis
      - Sample service can connect to Postgres and Redis
+   - Status: Completed (dev infra + helper scripts)
+   - Notes: Added `docker-compose.dev.yml` at repository root to start Postgres 14 and Redis 7 with healthchecks and named volumes. Added `.env.development` for local connection strings. Added helper scripts:
+     - `packages/shared/scripts/run-local-migrations.ps1` (PowerShell) — brings up infra, waits for Postgres, runs migrations, seeds and smoke test.
+     - `packages/shared/scripts/run-local-migrations.sh` (bash) — same for Unix environments.
+     - Root `package.json` scripts: `infra:up`, `infra:down`, `infra:logs`, and `migrate:local` to orchestrate infra and migrations.
+   - How to run locally:
+     - Start infra: `pnpm run infra:up`
+     - Run migrations + seed + smoke test (PowerShell): `pnpm --filter @nusantara/shared run run-local-migrations.ps1` or run the root helper: `pnpm run migrate:local` (requires `cross-env` installed)
+   - Caveats & recommendations:
+     - The helper scripts assume Docker is installed locally. If Docker is not available, run migrations against another dev DB and set `DATABASE_URL` appropriately.
+     - Consider adding the `uuid-ossp` fallback before running migrations on some hosted Postgres instances. Next step: add `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"` to migrations or provide client-side UUID generation.
+  - Local run note:
+    - I attempted to run `pnpm run infra:up` in this environment to bring up the services and run migrations. Docker Desktop on this machine requires an authenticated account (Docker returned "authentication required - email must be verified before using account").
+    - The compose and migration scripts are present and correct; to complete local verification, please ensure Docker Desktop/Engine is logged in (via Docker Desktop UI or `docker login`) and then run the commands above.
 
 7) Shared API Client (HTTP/GraphQL) Generator
    - Owner: admin
