@@ -1,0 +1,8 @@
+{
+  "name": "@nusantara/api-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "echo \"No build configured for api-gateway yet\" && exit 0"
+  }
+}

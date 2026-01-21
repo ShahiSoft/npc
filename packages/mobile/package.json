@@ -1,0 +1,8 @@
+{
+  "name": "@nusantara/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "echo \"No build configured for mobile yet\" && exit 0"
+  }
+}

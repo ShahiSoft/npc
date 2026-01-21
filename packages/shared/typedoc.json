@@ -1,0 +1,9 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "dist/docs/types",
+  "exclude": ["**/__tests__/**", "**/tests/**"],
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "includeVersion": true,
+  "tsconfig": "tsconfig.json"
+}
